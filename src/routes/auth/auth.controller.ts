@@ -3,6 +3,7 @@ import vine, { errors } from "@vinejs/vine";
 import { initialRegistrationSchema } from "./auth.validation";
 import { otpExpiresAtGenerator, OtpExpiresAtGenerator } from "./auth.helper";
 import prisma from "../../db/db.config";
+import { sendMail } from "../../config/mailer";
 
 class AuthController {
   static async InitialRegistration(
@@ -25,7 +26,12 @@ class AuthController {
         },
       });
 
-      
+      sendMail(email, "OTP", otp);
+      res.json({
+        status: "success",
+        message: "OTP sent successfully",
+      });
+
       return;
     } catch (error) {
       next(error);

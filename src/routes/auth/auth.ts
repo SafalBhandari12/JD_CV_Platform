@@ -18,14 +18,15 @@ const router = Router();
  *                email:
  *                  type: string
  *                  format: email
- *                password:
+ *                role:
  *                  type: string
- *                  format: password
+ *                  format:  enum
+ *                  enum: [ORG, USER]
  *      responses:
  *        '200':
  *          description: Initial registration successful
  */
 
-router.post('/init-registration', AuthController.InitialRegistration);
+router.post("/init-registration", AuthController.InitialRegistration);
 
 export default router;
