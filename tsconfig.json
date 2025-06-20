@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", // Modern JS features (like top-level await)
+    "module": "nodenext", // Use ESM-style imports/exports
+    "moduleResolution": "nodenext", // Resolve using Node.js style
+    "esModuleInterop": true, // Allow default imports from CommonJS
+    "forceConsistentCasingInFileNames": true,
+    "strict": true, // Enable all strict type-checking
+    "skipLibCheck": true, // Skip type checking of declaration files
+    "outDir": "./dist", // Output directory for compiled files
+    "rootDir": "./src", // Source directory
+    "resolveJsonModule": true, // Import `.json` files as modules
+    "isolatedModules": true, // Required for ESM + TS with Babel/Vite/etc.
+    "allowSyntheticDefaultImports": true,
+    "noEmit": false, // Emit JS files (useful unless you're using tsc just for type-checking)
+    "types": ["node"] // Node types if building a backend app
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

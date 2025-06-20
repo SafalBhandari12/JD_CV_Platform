@@ -1,0 +1,73 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  ORG
+}
+
+enum RegistrationStatus {
+  EMAIL_VERIFIED
+  COMMON_COMPLETED
+  FULLY_REGISTERED
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  email     String
+  role      Role
+  otp       String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+}
+
+model User {
+  id                 String             @id @default(uuid())
+  email              String
+  role               Role               @default(USER)
+  status             RegistrationStatus @default(EMAIL_VERIFIED)
+  password           String? // Optional, can be null if using OAuth
+  registrationStatus RegistrationStatus @default(EMAIL_VERIFIED)
+
+  // One to One relation to the profile
+  userProfile UserProfile?
+
+  // One to One relation to the organization
+  organization Organization?
+}
+
+model UserProfile {
+  id         String   @id @default(uuid())
+  name       String
+  location   String
+  university String?
+  interest   String[]
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+}
+
+model Organization{
+  id String @id @default(uuid())
+  name String
+  location String
+  description String
+  type String
+  size String
+  user User @relation(fields: [userId], references: [id])
+  userId String @unique
+}
