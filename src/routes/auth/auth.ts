@@ -1,5 +1,6 @@
 import { Router } from "express";
 import AuthController from "./auth.controller";
+import { emailRateLimiter } from "../../config/rateLimiter";
 
 const router = Router();
 
@@ -27,6 +28,10 @@ const router = Router();
  *          description: Initial registration successful
  */
 
-router.post("/init-registration", AuthController.InitialRegistration);
+router.post(
+  "/init-registration",
+  emailRateLimiter,
+  AuthController.InitialRegistration
+);
 
 export default router;

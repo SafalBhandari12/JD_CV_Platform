@@ -27,8 +27,7 @@ enum RegistrationStatus {
 }
 
 model VerificationToken {
-  id        String   @id @default(uuid())
-  email     String
+  email     String   @id
   role      Role
   otp       String
   expiresAt DateTime
@@ -37,7 +36,7 @@ model VerificationToken {
 
 model User {
   id                 String             @id @default(uuid())
-  email              String
+  email              String             @unique
   role               Role               @default(USER)
   status             RegistrationStatus @default(EMAIL_VERIFIED)
   password           String? // Optional, can be null if using OAuth
@@ -61,13 +60,13 @@ model UserProfile {
   userId String @unique
 }
 
-model Organization{
-  id String @id @default(uuid())
-  name String
-  location String
+model Organization {
+  id          String @id @default(uuid())
+  name        String
+  location    String
   description String
-  type String
-  size String
-  user User @relation(fields: [userId], references: [id])
-  userId String @unique
+  type        String
+  size        String
+  user        User   @relation(fields: [userId], references: [id])
+  userId      String @unique
 }
