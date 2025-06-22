@@ -1,3 +1,7 @@
+import bcrypt from "bcryptjs";
+import envConfig from "../../config/getEnvConfig";
+import jwt from "jsonwebtoken";
+
 export type OtpExpiresAtGenerator = { otp: string; expiresAt: Date };
 
 export const otpExpiresAtGenerator = (): OtpExpiresAtGenerator => {
@@ -7,3 +11,40 @@ export const otpExpiresAtGenerator = (): OtpExpiresAtGenerator => {
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
   return { otp, expiresAt };
 };
+
+export const hashedPassword = (password: string): string => {
+  const salt = bcrypt.genSaltSync(10);
+  return bcrypt.hashSync(password, salt);
+};
+
+export const comparePassword = (
+  password: string,
+  hashedPassword: string
+): boolean => {
+  return bcrypt.compareSync(password, hashedPassword);
+};
+
+
+export const signedAccessToken = (payload: object): string => {
+  return jwt.sign(payload, envConfig.ACCESS_SECRET, { expiresIn: "1h" });
+};
+
+export const signedRefreshToken = (payload: object): string => {
+  return jwt.sign(payload, envConfig.REFRESH_SECRET, { expiresIn: "7d" });
+};
+
+export const verifyAccessToken = (token: string): object => {
+  try {
+    return jwt.verify(token, envConfig.ACCESS_SECRET) as object;
+  } catch (error) {
+    throw new Error("Invalid access token");
+  }
+};
+
+export const verifyRefreshToken = (token: string): object => {
+  try {
+    return jwt.verify(token, envConfig.REFRESH_SECRET) as object;
+  } catch (error) {
+    throw new Error("Invalid refresh token");
+  }
+}

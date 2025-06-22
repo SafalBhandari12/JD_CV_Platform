@@ -17,6 +17,15 @@ const swaggerOptions: swaggerJSDoc.Options = {
         url: `http://localhost:${envConfig.PORT}`,
       },
     ],
+    components: {
+      securitySchemes: {
+        BearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
   },
   // Use a relative path string instead of __dirname for ES modules
   apis: ["./src/routes/**/*.ts"],

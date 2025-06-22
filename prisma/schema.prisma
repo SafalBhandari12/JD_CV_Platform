@@ -20,15 +20,28 @@ enum Role {
   ORG
 }
 
+enum UserRole {
+  BASIC
+  PRO
+  PREMIUM
+  ULTRA
+}
+
+enum OrgRole {
+  BASIC
+  PRO
+  PREMIUM
+  ULTRA
+}
+
 enum RegistrationStatus {
+  EMAIL_VERIFICATION_PENDING
   EMAIL_VERIFIED
-  COMMON_COMPLETED
   FULLY_REGISTERED
 }
 
 model VerificationToken {
   email     String   @id
-  role      Role
   otp       String
   expiresAt DateTime
   used      Boolean  @default(false)
@@ -38,35 +51,70 @@ model User {
   id                 String             @id @default(uuid())
   email              String             @unique
   role               Role               @default(USER)
-  status             RegistrationStatus @default(EMAIL_VERIFIED)
-  password           String? // Optional, can be null if using OAuth
-  registrationStatus RegistrationStatus @default(EMAIL_VERIFIED)
+  password           String
+  registrationStatus RegistrationStatus @default(EMAIL_VERIFICATION_PENDING)
+  createdAt          DateTime           @default(now())
 
+  // One to many relation to the verification tokens
+  refreshTokens RefreshToken[]
   // One to One relation to the profile
-  userProfile UserProfile?
-
+  userProfile   UserProfile?
   // One to One relation to the organization
-  organization Organization?
+  organization  Organization?
 }
 
 model UserProfile {
-  id         String   @id @default(uuid())
-  name       String
-  location   String
-  university String?
-  interest   String[]
+  id           String       @id @default(uuid())
+  name         String
+  location     String
+  university   University[]
+  interest     String[]
+  introduction String
+  position     String
+  role         UserRole     @default(BASIC)
 
-  user   User   @relation(fields: [userId], references: [id])
-  userId String @unique
+  resume      String
+  profilePicture String
+
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model University {
+  id        String @id @default(uuid())
+  name      String
+  startYear Int
+  endYear   Int?
+  degree    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userProfile UserProfile @relation(fields: [userId], references: [id])
+  userId      String      @unique
 }
 
 model Organization {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   location    String
   description String
   type        String
   size        String
-  user        User   @relation(fields: [userId], references: [id])
-  userId      String @unique
+  role        OrgRole  @default(BASIC)
+
+  user        User     @relation(fields: [id], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }

@@ -13,7 +13,8 @@
     "isolatedModules": true, // Required for ESM + TS with Babel/Vite/etc.
     "allowSyntheticDefaultImports": true,
     "noEmit": false, // Emit JS files (useful unless you're using tsc just for type-checking)
-    "types": ["node"] // Node types if building a backend app
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

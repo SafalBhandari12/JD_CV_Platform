@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import { limiter } from "./rateLimiter";
+import { limiter } from "../helpers/rateLimiter";
 
 export const setMiddleware = (app: express.Application) => {
   app.use(express.json());
