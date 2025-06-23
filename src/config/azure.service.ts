@@ -18,7 +18,6 @@ export async function uploadToAzure(
 ): Promise<string> {
   const blobName = `${uuidv4()}-${originalName}`;
   const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
   await blockBlobClient.uploadData(fileBuffer, {
     blobHTTPHeaders: {
       blobContentType: mimeType,

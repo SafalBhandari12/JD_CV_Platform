@@ -3,7 +3,7 @@ import multer from "multer";
 import { allAllowedMimeTypes } from "../constants/allowedMimeTypes";
 
 // Define the file interface
-interface MulterFile {
+export interface MulterFile {
   fieldname: string;
   originalname: string;
   encoding: string;

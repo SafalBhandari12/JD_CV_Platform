@@ -40,6 +40,8 @@ enum RegistrationStatus {
   FULLY_REGISTERED
 }
 
+
+
 model VerificationToken {
   email     String   @id
   otp       String
@@ -96,18 +98,63 @@ model University {
   userId      String      @unique
 }
 
+enum organizationType {
+  STARTUP
+  SME
+  CORPORATE
+  NGO
+}
+
+enum organizationSize {
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
 model Organization {
   id          String   @id @default(uuid())
   name        String
   location    String
   description String
-  type        String
-  size        String
+  type       organizationType
+  size        organizationSize
   role        OrgRole  @default(BASIC)
+  website     String?
+  logo        String
+  posts       organizationPost[]
 
-  user        User     @relation(fields: [id], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String   @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+
+enum PostStatus {
+  OPEN
+  CLOSED
+}
+
+model organizationPost{
+  id          String   @id @default(uuid())
+  title       String
+  salaryMin   Int
+  salaryMax   Int  
+  skills       String[]
+  education   String[]
+  experience  Int
+  responsibilities String[]
+  description String
+  deadline    DateTime
+
+  status      PostStatus @default(OPEN)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  organizationId String
 }
 
 model RefreshToken {

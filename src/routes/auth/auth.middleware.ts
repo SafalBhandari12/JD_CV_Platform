@@ -35,3 +35,43 @@ export const isAuthenticated = (
   }
 };
 
+export const isUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const user = (req as any).user as returnAccessToken;
+
+  if( !user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+  if (user.role !== "USER") {
+    res.status(403).json({ message: "Forbidden: Only users can access this resource" });
+    return;
+  }
+};
+
+export const isOrg = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  const user = (req as any).user as returnAccessToken;
+
+  if (!user) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  if (user.role !== "ORG") {
+    res
+      .status(403)
+      .json({
+        message: "Forbidden: Only organizations can access this resource",
+      });
+    return;
+  }
+
+  next();
+};

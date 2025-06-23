@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import {
   initialRegistrationSchema,
   loginUserSchema,
+  organizationRegistrationSchema,
+  postSchema,
   userProfileSchema,
   verifyOtpSchema,
 } from "./auth.validation";
@@ -17,30 +19,12 @@ import prisma from "../../db/db.config";
 import { emailQueue, emailQueueName } from "../../jobs/emailQueueJobs";
 import { env } from "process";
 import fileType from "file-type";
-import { allowedImageMimeTypes } from "../../constants/allowedMimeTypes";
+import { allAllowedMimeTypes } from "../../constants/allowedMimeTypes";
 import { uploadToAzure } from "../../config/azure.service";
-import { returnAccessToken } from "./auth.types";
-import { Request as ExpressRequest } from "express";
-
+import { RequestWithFilesTypes, returnAccessToken } from "./auth.types";
+import { MulterFile } from "../../helpers/upload";
+import { Role, UserRole } from "../../generated/prisma";
 // Define MulterFile interface
-interface MulterFile {
-  fieldname: string;
-  originalname: string;
-  encoding: string;
-  mimetype: string;
-  size: number;
-  destination: string;
-  filename: string;
-  path: string;
-  buffer: Buffer;
-}
-
-// Define a custom interface for the request with files
-interface RequestWithFiles extends Omit<Request, "files"> {
-  files?: {
-    [fieldname: string]: MulterFile[];
-  };
-}
 
 class AuthController {
   static async InitialRegistration(
@@ -201,7 +185,7 @@ class AuthController {
     }
   }
 
-  static async getRefreshToken(
+  static async getaccessToken(
     req: Request,
     res: Response,
     next: NextFunction
@@ -277,15 +261,19 @@ class AuthController {
     next: NextFunction
   ): Promise<void> {
     try {
-      if ((req as any).user.role !== "USER") {
-        res.status(403).json({ message: "Forbidden: Only users can register" });
-        return;
+      // Parse university and interest if they are strings
+      if (typeof req.body?.university === "string") {
+        req.body.university = JSON.parse(req.body.university);
       }
+      if (typeof req.body?.interest === "string") {
+        req.body.interest = JSON.parse(req.body.interest);
+      }
+
       const { name, location, university, interest, introduction, position } =
         await userProfileSchema.validate(req.body);
 
       // Cast request to include files
-      const reqWithFiles = req as RequestWithFiles;
+      const reqWithFiles = req as any as RequestWithFilesTypes;
 
       let resume: MulterFile | undefined;
       let profilePicture: MulterFile | undefined;
@@ -306,14 +294,14 @@ class AuthController {
         profilePicture.buffer
       );
 
-      if (!resumeType || !allowedImageMimeTypes.includes(resumeType.mime)) {
+      if (!resumeType || !allAllowedMimeTypes.includes(resumeType.mime)) {
         res.status(400).json({ message: "Invalid resume file type" });
         return;
       }
 
       if (
         !profilePictureType ||
-        !allowedImageMimeTypes.includes(profilePictureType.mime)
+        !allAllowedMimeTypes.includes(profilePictureType.mime)
       ) {
         res.status(400).json({ message: "Invalid profile picture file type" });
         return;
@@ -359,6 +347,97 @@ class AuthController {
     } catch (error) {
       next(error);
     }
+  }
+
+  static async RegistrationOrg(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      if (
+        await prisma.organization.findFirst({
+          where: { userId: ((req as any).user as returnAccessToken).userId },
+        })
+      ) {
+        res
+          .status(400)
+          .json({ message: "User is already registered as an organization" });
+        return;
+      }
+
+      const { name, location, description, type, size, website, posts } =
+        await organizationRegistrationSchema.validate(req.body);
+
+      const validatedPosts = await Promise.all(
+        posts.map(async (post) => {
+          return await postSchema.validate(post);
+        })
+      );
+
+      const reqWithFile = req as any as RequestWithFilesTypes;
+
+      let logoString: MulterFile | undefined;
+
+      if (reqWithFile.files && reqWithFile.files.logo) {
+        logoString = reqWithFile.files.logo[0];
+      } else {
+        res.status(400).json({ message: "Logo file is required" });
+        return;
+      }
+
+      const logoType = await fileType.fileTypeFromBuffer(logoString.buffer);
+
+      if (!logoType || !allAllowedMimeTypes.includes(logoType.mime)) {
+        res.status(400).json({ message: "Invalid logo file type" });
+        return;
+      }
+
+      const logoUrl = await uploadToAzure(
+        logoString.buffer,
+        logoString.originalname,
+        logoString.mimetype
+      );
+
+      await prisma.organization.create({
+        data: {
+          name,
+          location,
+          description,
+          type,
+          size,
+          userId: ((req as any).user as returnAccessToken).userId,
+          website,
+          posts: {
+            create: validatedPosts.map((post) => ({
+              skills: post.skills,
+              title: post.title,
+              salaryMin: post.salaryMin,
+              salaryMax: post.salaryMax,
+              description: post.description,
+              responsibilities: post.responsibilities,
+              education: post.education,
+              experience: post.experience,
+              deadline: post.deadline,
+            })),
+          },
+          logo: logoUrl,
+        },
+      });
+      res.status(201).json({
+        status: "success",
+        message: "Organization registered successfully",
+      });
+      return;
+    } catch (error) {
+      next(error);
+    }
+    await prisma.user.update({
+      where: { id: ((req as any).user as returnAccessToken).userId },
+      data: {
+        registrationStatus: "FULLY_REGISTERED",
+      },
+    });
   }
 }
 

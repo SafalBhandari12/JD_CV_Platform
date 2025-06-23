@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import envConfig from "../../config/getEnvConfig";
 import jwt from "jsonwebtoken";
+import upload from "../../helpers/upload";
 
 export type OtpExpiresAtGenerator = { otp: string; expiresAt: Date };
 
@@ -24,7 +25,6 @@ export const comparePassword = (
   return bcrypt.compareSync(password, hashedPassword);
 };
 
-
 export const signedAccessToken = (payload: object): string => {
   return jwt.sign(payload, envConfig.ACCESS_SECRET, { expiresIn: "1h" });
 };
@@ -41,10 +41,20 @@ export const verifyAccessToken = (token: string): object => {
   }
 };
 
+// In src/helpers/upload.ts
+export const uploadFieldsRegistrationUser = upload.fields([
+  { name: "resume", maxCount: 1 },
+  { name: "profilePicture", maxCount: 1 },
+]);
+
+export const uploadFieldsRegistrationOrg = upload.fields([
+  { name: "logo", maxCount: 1 },
+]);
+
 export const verifyRefreshToken = (token: string): object => {
   try {
     return jwt.verify(token, envConfig.REFRESH_SECRET) as object;
   } catch (error) {
     throw new Error("Invalid refresh token");
   }
-}
+};
